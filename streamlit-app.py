@@ -10,6 +10,15 @@ import re
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
 
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import nltk
+# Download English stopwords
+nltk.download('stopwords')
+
+# Download Japanese stopwords
+nltk.download('stopwords-jp')
+
 
 # Load the trained model and TF-IDF vectorizer
 model = pickle.load(open('trained_model.pkl', 'rb'))
@@ -41,8 +50,7 @@ def sort_coo(coo_matrix):
     return sorted(tuples, key=lambda x:(x[1], x[0]), reverse=True)
 
 def extract_topn_from_vector(feature_names, sorted_items, topn=10):
-    print(feature_names)
-    print(sorted_items)
+    print("feature_names",feature_names)
     sorted_items = sorted_items[:topn]
     
     score_vals = []
@@ -58,37 +66,41 @@ def extract_topn_from_vector(feature_names, sorted_items, topn=10):
     results = {}
     for idx in range(len(feature_vals)):
         results[feature_vals[idx]] = score_vals[idx]
+    print("Getting results",results)
     
     return results
 
 def clean_str(string):
     '''
-    tokenization, cleaning for dataset
+    Tokenization, cleaning, stopword removal, and lemmatization for the dataset
     '''
-    string=str(string)
-    string = re.sub(r"\'s", "", string)
-
-    string = re.sub(r"\'ve", "", string)
-
-    string = re.sub(r"\'t", "", string) 
+    string = str(string)
     
-    string = re.sub(r"\'re", "", string)
-    string = re.sub(r"\'d", "", string)
-    string = re.sub(r"\'lls", "", string)
-    string = re.sub(r",", "", string)
-    string = re.sub(r"!", "", string)
-    string = re.sub(r"\(", "", string)
-    string = re.sub(r"\?", "", string)
-    string = re.sub(r"'", "", string)
+    # Remove unnecessary characters
     string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
-    string = re.sub(r"[0-9]\w+|[0-9]", "", string)
-    string = re.sub(r"\s{2,}", " ", string)
-    return string.strip().lower() 
-def predict():
-    features = clean_str(content)
-   
     
+    # Tokenization
+    tokens = string.strip().lower().split()
+
+    # Remove stopwords
+    stop_words = set(stopwords.words("english"))
+    tokens = [token for token in tokens if token not in stop_words]
+    
+    # Lemmatization
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    
+    # Join tokens back into a string
+    cleaned_string = " ".join(tokens)
+    
+    return cleaned_string
+
+def predict(max):
+    features = clean_str(content)
+    print("Full feauture", features)
     features = features.split(" ")
+    print("Full feauture array", features)
+    
     transformed_data= tfidf.transform(features)
     predicted = model.predict(transformed_data)[0]
     # return features
@@ -99,30 +111,31 @@ def predict():
     
     cv = CountVectorizer(stop_words='english')
     word_count_vector=cv.fit_transform(features)
-    
-
-
+    print("word_count_vector",word_count_vector)
     
     doc=features[0]
+    print("doc",doc)
     #Generate tf-idf for the given document
     tfidf_transformer = TfidfTransformer(smooth_idf=True, use_idf=True)
     tfidf_transformer.fit(word_count_vector)
     tfidf_vector =tfidf_transformer.transform(cv.transform([doc]))
     #Sort the tf-idf vectors by descending order of scores
     sorted_items=sort_coo(tfidf_vector.tocoo())
-    #Only needed once 
-    #msg="Put some more important words and try for recommendation"
+    
     feature_names = cv.get_feature_names_out()
+    # feature_names = feature_names[:10]
+    print("feature names",feature_names)
 
 
-    #Extract only the top n: n here is 10
-    keywords=extract_topn_from_vector(feature_names,sorted_items,10)
+    #Extract only the top n
+    keywords=extract_topn_from_vector(feature_names,sorted_items,3)
     # return keywords
+    print("\n\n\n%%%%%%%%%%%%\n\n",keywords)
     qu=""
     for k in keywords:
         qu+=qu+k+" "
     cn='in'
-    secret='secret'
+    secret='52c11279b478428daeaf4bfecc1c684a'
     # Define the endpoint
     url = 'https://newsapi.org/v2/everything?'
     # Specify the query and number of returns
@@ -137,9 +150,10 @@ def predict():
     response = requests.get(url, params=parameters)
     # Convert the response to JSON format and pretty print it
     response_json = response.json()
+    # print("\n\n\n\n Response json \n\n\n\n",response_json)
     # print("Length of :",response_json['totalResults'])
     if 'totalResults' not in response_json:
-        return [["The response is empty"]],[["https://images.app.goo.gl/npe1pLsjBr8u1V9w5"]]
+        return [["The response is empty"]],[["https://images.app.goo.gl/npe1pLsjBr8u1V9w5"]],"Empty"
         
     news=response_json
     url_col =[]
@@ -186,7 +200,7 @@ def predict():
         # shuffle these two arrays 
     articles, web_url,img_url,title = shuffle(articles,web_url, img_url,title,random_state=4)
         
-    n=3
+    n=max
     xtrain = articles[:]
     xtrain_urls = web_url[:]
     x_img_url=img_url[:]
@@ -210,34 +224,50 @@ st.set_page_config(page_title=app_title, page_icon=":smiley:")
 st.title(app_title)
 
 # Sidebar with input form
-st.sidebar.header("Write notes below")
-content = st.sidebar.text_area("Enter your notes here")
+# st.header("Write notes below")
+content = st.text_area("Enter your notes here")
+selected_value = st.slider('Select max number of results that can be fetched', 1, 10, 1)
 
 
 # Button to trigger predictions
-if st.sidebar.button("Predict"):
-    # Your prediction logic here
-    # ...
-    prediction_arr,recommended_urls,predicted = predict()
-    # keywords=predict()
-    # st.write("Prediction:", keywords)
-    
-    print("prediction array :\n\n",prediction_arr)
-    print("recommended_urls array :\n\n",recommended_urls)
-    
-    for prediction_list, url_list in zip(prediction_arr, recommended_urls):
+if st.button("Recommend news"):
+    prediction_arr,recommended_urls,predicted = predict(selected_value)
+    st.header("Top recommendations:")
+    print(prediction_arr,recommended_urls)
+        # st.write(predicted)
+    if(predicted !="Empty"):
+        for prediction_list, url_list in zip(prediction_arr, recommended_urls):
         # Extract the first prediction from the list (if available)
-        prediction = prediction_list[0] if prediction_list.size > 0 else None
-        # Extract the first URL from the array (if available)
-        url = url_list[0] if url_list.size > 0 else None
-
-        if prediction and url:
-            st.write(f"{prediction}")
-            st.markdown(f"[Recommended URL]({url})")
-            st.write(f"Predicted under {predicted}")
-            st.write("---")  # Add a separator between each pair
+            prediction = prediction_list[0] if prediction_list.size > 0 else None
+            # Extract the first URL from the array (if available)
+            url = url_list[0] if url_list.size > 0 else None
+            if prediction and url:
+               st.write(f"{prediction}")
+               st.markdown(f"[Recommended URL]({url})")
+            else:
+                st.write("There are infinity to be explored! Try something new")
+            # st.write(f"Predicted under {predicted}")
+            # st.write("---")  # Add a separator between each pair
+    else:
+        st.write("There are infinity to be explored! Try something new")
+        
 # Streamlit app footer
-st.sidebar.markdown("---")
-st.sidebar.markdown("Your additional information or links go here.")
+st.markdown("---")
+name = "Rohan Ayush"
+
+# Twitter link with emoji
+twitter_link = "[Twitter](https://twitter.com/rohanayush) :smiley:"
+
+# LinkedIn link with emoji
+linkedin_link = "[LinkedIn](https://www.linkedin.com/in/rohanayush) :rocket:"
+
+# Display the information using markdown
+st.markdown(f"Created by {name}")
+st.markdown(twitter_link)
+st.markdown(linkedin_link)
+st.markdown("---")
+
+# st.write("Created by Rohan Ayush")
+
 
 
