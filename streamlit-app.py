@@ -122,7 +122,7 @@ def predict():
     for k in keywords:
         qu+=qu+k+" "
     cn='in'
-    secret='52c11279b478428daeaf4bfecc1c684a'
+    secret='secret'
     # Define the endpoint
     url = 'https://newsapi.org/v2/everything?'
     # Specify the query and number of returns
