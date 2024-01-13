@@ -46,6 +46,8 @@ def sort_coo(coo_matrix):
     return sorted(tuples, key=lambda x:(x[1], x[0]), reverse=True)
 
 def extract_topn_from_vector(feature_names, sorted_items, topn=10):
+    print(feature_names)
+    print(sorted_items)
     sorted_items = sorted_items[:topn]
     
     score_vals = []
@@ -122,7 +124,8 @@ def predict():
 
 
     #Extract only the top n: n here is 10
-    keywords=extract_topn_from_vector(feature_names,sorted_items,3)
+    keywords=extract_topn_from_vector(feature_names,sorted_items,10)
+    print("keywords",keywords)
     # return keywords
     qu=""
     for k in keywords:
