@@ -13,6 +13,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import nltk
+nltk.download('wordnet')
 # Download English stopwords
 nltk.download('stopwords')
 
@@ -233,6 +234,8 @@ selected_value = st.slider('Select max number of results that can be fetched', 1
 if st.button("Recommend news"):
     prediction_arr,recommended_urls,predicted = predict(selected_value)
     st.header("Top recommendations:")
+    st.write("---")  # Add a separator between each pair
+    
     print(prediction_arr,recommended_urls)
         # st.write(predicted)
     if(predicted !="Empty"):
@@ -242,8 +245,11 @@ if st.button("Recommend news"):
             # Extract the first URL from the array (if available)
             url = url_list[0] if url_list.size > 0 else None
             if prediction and url:
+               
                st.write(f"{prediction}")
                st.markdown(f"[Recommended URL]({url})")
+               st.write("---")  # Add a separator between each pair
+               
             else:
                 st.write("There are infinity to be explored! Try something new")
             # st.write(f"Predicted under {predicted}")
@@ -252,8 +258,9 @@ if st.button("Recommend news"):
         st.write("There are infinity to be explored! Try something new")
         
 # Streamlit app footer
-st.markdown("---")
 name = "Rohan Ayush"
+
+
 
 # Twitter link with emoji
 twitter_link = "[Twitter](https://twitter.com/rohanayush) :smiley:"
