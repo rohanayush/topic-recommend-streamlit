@@ -9,8 +9,6 @@ from textblob import Word
 import re
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
-from textblob import Word
-
 
 
 # Load the trained model and TF-IDF vectorizer
@@ -35,9 +33,6 @@ def top_articles(xtrain_tfidf, xtrain, texts,xtrain_urls,x_img_url,title,n=10):
     rec_urls = xtrain_urls[sorted_indices[:n]]
     rec_img_urls = x_img_url[sorted_indices[:n]]
     rec_title = title[sorted_indices[:n]]
-
-
-    
     return top_rec, rec_urls,sorted_scores,rec_img_urls
 
 
@@ -93,11 +88,8 @@ def predict():
     features = clean_str(content)
    
     
-    print("features type",type(features)," and value -",features)
     features = features.split(" ")
     transformed_data= tfidf.transform(features)
-    print("\n\n\n\n prediction \n\n\n\n",model.predict(transformed_data))
-    print("\n\n\n\n features \n\n\n\n",features)
     predicted = model.predict(transformed_data)[0]
     # return features
     # for i ,value in enumerate(features):
@@ -125,7 +117,6 @@ def predict():
 
     #Extract only the top n: n here is 10
     keywords=extract_topn_from_vector(feature_names,sorted_items,10)
-    print("keywords",keywords)
     # return keywords
     qu=""
     for k in keywords:
@@ -179,22 +170,18 @@ def predict():
         title[index] = ' '.join([Word(word) for word in clean_str(value).split()])	
     dataframe = {'title':title,'url':url_col,'description':description ,'image_url':img}
     df = pd.DataFrame(dataframe)
-    #print('writing csv file...')
-    df.to_csv('./current.csv', index = False)
-
-    cur_csv=pd.read_csv("./current.csv")
     
     
     text_features = tfidf.transform(features)
     prediction = model.predict(text_features)
 
     # move articles to an array
-    articles = cur_csv.description.values
+    articles = df.description.values
 
     # move article web_urls to an array
-    web_url = cur_csv.url.values
-    img_url =cur_csv.image_url.values
-    title =cur_csv.title.values
+    web_url = df.url.values
+    img_url =df.image_url.values
+    title =df.title.values
 
         # shuffle these two arrays 
     articles, web_url,img_url,title = shuffle(articles,web_url, img_url,title,random_state=4)
