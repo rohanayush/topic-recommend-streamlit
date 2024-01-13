@@ -186,14 +186,14 @@ def predict():
         # shuffle these two arrays 
     articles, web_url,img_url,title = shuffle(articles,web_url, img_url,title,random_state=4)
         
-    n=5
+    n=3
     xtrain = articles[:]
     xtrain_urls = web_url[:]
     x_img_url=img_url[:]
     #tfidf.fit(xtrain)
     x_tfidf = tfidf.transform(xtrain)
 
-    top_recommendations, recommended_urls, sorted_sim_scores,rec_img_url = top_articles(x_tfidf, xtrain, text_features,xtrain_urls,x_img_url,title,5)
+    top_recommendations, recommended_urls, sorted_sim_scores,rec_img_url = top_articles(x_tfidf, xtrain, text_features,xtrain_urls,x_img_url,title,n)
     # st.write("from dunction"+prediction)
     print(top_recommendations)
     print(recommended_urls)
